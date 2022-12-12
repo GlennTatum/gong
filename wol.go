@@ -24,7 +24,7 @@ func main() {
 	 */
 
 	iface_in := flag.String("i", "Interface", "Network Interface e.g. enp5s0")
-	hardwareaddr_in := flag.String("d", "Mac Address", "Network Hardware Address e.g. m8:7a:52:4p:39:h2")
+	hardwareaddr_in := flag.String("d", "Mac Address", "Network Hardware Address e.g. 01:23:45:67:89:ab")
 
 	flag.Parse()
 
