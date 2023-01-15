@@ -13,15 +13,6 @@ import (
 
 func main() {
 
-	// Get a list of all interfaces
-
-	/*
-	 * Command Options:
-	 * -i : Interface to be used
-	 * -h : Hardware address to be found
-	 *
-	 */
-
 	iface_in := flag.String("i", "Interface", "Network Interface e.g. enp5s0")
 	hardwareaddr_in := flag.String("d", "Mac Address", "Network Hardware Address e.g. 01:23:45:67:89:ab")
 
@@ -35,6 +26,14 @@ func main() {
 		fmt.Println("e")
 		panic(err)
 	}
+
+	ip, _ := in.Addrs()
+
+	ipv4_local := strings.Split(ip[0].String(), ".")
+
+	ipv4_local[3] = "255"
+
+	ipv4_broadcast := strings.Join(ipv4_local, ".")
 
 	hw_addr := in.HardwareAddr.String()
 
@@ -55,7 +54,7 @@ func main() {
 
 	// https://forums.ivanti.com/s/article/Understanding-Wake-On-LAN?language=en_US
 
-	conn, err := net.Dial("udp", "255.255.255.0:0")
+	conn, err := net.Dial("udp", fmt.Sprintf("%s:0", ipv4_broadcast))
 	if err != nil {
 		panic(err)
 	}
@@ -67,8 +66,6 @@ func main() {
 func generateWOLPayload(hardwareaddr string) []byte {
 
 	macaddr := strings.Split(hardwareaddr, ":")
-
-	fmt.Println(macaddr)
 
 	payload := []byte{
 
@@ -82,8 +79,6 @@ func generateWOLPayload(hardwareaddr string) []byte {
 		uint8(0xff),
 	}
 
-	// 16 Repetitions of the target computers MAC Address
-
 	for i := 0; i < 16; i++ {
 
 		for i := range macaddr {
@@ -94,8 +89,6 @@ func generateWOLPayload(hardwareaddr string) []byte {
 		}
 
 	}
-
-	fmt.Println(payload)
 
 	return payload
 
