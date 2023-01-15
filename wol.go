@@ -53,7 +53,9 @@ func main() {
 
 	gopacket.SerializeLayers(buf, opts, &eth, gopacket.Payload(p))
 
-	conn, err := net.Dial("udp", "255.255.255.0:9")
+	// https://forums.ivanti.com/s/article/Understanding-Wake-On-LAN?language=en_US
+
+	conn, err := net.Dial("udp", "255.255.255.0:0")
 	if err != nil {
 		panic(err)
 	}
