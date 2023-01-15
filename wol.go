@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-	"github.com/google/gopacket/pcap"
 )
 
 func main() {
@@ -28,84 +27,44 @@ func main() {
 
 	flag.Parse()
 
-	fmt.Println("Using Interface ", *iface_in)
-	fmt.Println("Sending Magic Packet to Desktop ", *hardwareaddr_in)
+	fmt.Println("Using Interface: ", *iface_in)
+	fmt.Println("Sending Magic Packet to Desktop: ", *hardwareaddr_in)
 
-	// Scan for the interface
-
-	// Get the IPNet and HardwareAddr Values
-
-	iface, err := net.InterfaceByName(*iface_in)
+	in, err := net.InterfaceByName(*iface_in)
 	if err != nil {
-
-		// Interface is not found return failure
-
+		fmt.Println("e")
 		panic(err)
 	}
 
-	ifaces, _ := iface.Addrs()
-
-	_, net, err := net.ParseCIDR(ifaces[0].String())
-	if err != nil {
-		panic(err)
-	}
-
-	send(net, &iface.HardwareAddr)
-
-	// Write Magic Packet
-}
-
-func send(iface *net.IPNet, hardwareaddr *net.HardwareAddr) {
-
-	handle, err := pcap.OpenLive(iface.String(), 9, true, pcap.BlockForever)
-	if err != nil {
-		panic(err)
-	}
-
-	writeWOL(handle, iface, hardwareaddr)
-
-	defer handle.Close()
-
-}
-
-func writeWOL(handle *pcap.Handle, iface *net.IPNet, hardwareaddr *net.HardwareAddr) {
-
-	// https://en.wikipedia.org/wiki/Wake-on-LAN
-
-	// https://pkg.go.dev/github.com/google/gopacket#hdr-Creating_Packet_Data
+	hw_addr := in.HardwareAddr.String()
 
 	eth := layers.Ethernet{
-		SrcMAC:       *hardwareaddr,
-		DstMAC:       net.HardwareAddr{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
-		EthernetType: layers.EthernetTypeARP,
-	}
-
-	udp := layers.UDP{
-
-		SrcPort:  9,
-		DstPort:  9,
-		Length:   102,
-		Checksum: 0,
+		SrcMAC: net.HardwareAddr(hw_addr),
+		DstMAC: net.HardwareAddr(*hardwareaddr_in),
 	}
 
 	buf := gopacket.NewSerializeBuffer()
-	opts := gopacket.SerializeOptions{}
+	opts := gopacket.SerializeOptions{
+		FixLengths:       true,
+		ComputeChecksums: true,
+	}
 
-	payload := generateWOLPayload(hardwareaddr)
+	p := generateWOLPayload(*hardwareaddr_in)
 
-	gopacket.SerializeLayers(buf, opts,
-		&eth,
-		&udp,
-		gopacket.Payload(payload),
-	)
+	gopacket.SerializeLayers(buf, opts, &eth, gopacket.Payload(p))
 
-	handle.WritePacketData(buf.Bytes())
+	conn, err := net.Dial("udp", "255.255.255.0:9")
+	if err != nil {
+		panic(err)
+	}
+
+	conn.Write(buf.Bytes())
 
 }
 
-func generateWOLPayload(hardwareaddr *net.HardwareAddr) []byte {
+func generateWOLPayload(hardwareaddr string) []byte {
 
-	macaddr := strings.Split(hardwareaddr.String(), ":")
+	macaddr := strings.Split(hardwareaddr, ":")
 
 	fmt.Println(macaddr)
 
@@ -133,6 +92,8 @@ func generateWOLPayload(hardwareaddr *net.HardwareAddr) []byte {
 		}
 
 	}
+
+	fmt.Println(payload)
 
 	return payload
 
