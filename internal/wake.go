@@ -12,7 +12,7 @@ import (
 )
 
 type Packet interface {
-	Send(p Packet)
+	Send()
 }
 
 type UDP struct {
@@ -53,11 +53,8 @@ When there is an interface is it suitable to call a types method within a functi
 
 */
 
-func Send(p Packet) {
-
-	/* Check network connectivity (interface availability etc.) */
-
-	p.Send(p)
+func Write(p Packet) {
+	// "Generic" that checks net
 }
 
 /*
@@ -68,7 +65,7 @@ Why can p not access the types attributes? (p.src)
 How is u able to be referenced if the only parameter to Send() is an interface?
 */
 
-func (u *UDP) Send(p Packet) {
+func (u *UDP) Send() {
 
 	fmt.Println("Sending Packet ", u, reflect.TypeOf(u.src))
 
@@ -130,5 +127,5 @@ func deviceStringToHex(s string) []byte {
 func main() {
 	p := NewUDP("255.255.255.0", "0", "28:d0:ea:80:38:9c", "28:d0:ea:80:38:9c")
 
-	Send(p)
+	p.Send()
 }
