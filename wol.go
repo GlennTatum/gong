@@ -67,17 +67,7 @@ func generateWOLPayload(hardwareaddr string) []byte {
 
 	macaddr := strings.Split(hardwareaddr, ":")
 
-	payload := []byte{
-
-		// Broadcast MAC Address
-
-		uint8(0xff),
-		uint8(0xff),
-		uint8(0xff),
-		uint8(0xff),
-		uint8(0xff),
-		uint8(0xff),
-	}
+	payload := []byte{uint8(0xff), uint8(0xff), uint8(0xff), uint8(0xff), uint8(0xff), uint8(0xff)}
 
 	for i := 0; i < 16; i++ {
 
