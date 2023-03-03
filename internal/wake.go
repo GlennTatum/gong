@@ -17,16 +17,12 @@ type Packet interface {
 
 type UDP struct {
 	ip      string
-	port    string
-	src     []byte
-	dst     []byte
+	src     string
+	dst     string
 	options gopacket.SerializeOptions
 }
 
-func NewUDP(ip string, port string, src string, dst string) Packet {
-
-	var src_conv = deviceStringToHex(src)
-	var dst_conv = deviceStringToHex(dst)
+func NewUDP(ip string, src string, dst string) Packet {
 
 	opts := gopacket.SerializeOptions{
 		FixLengths:       true,
@@ -35,9 +31,8 @@ func NewUDP(ip string, port string, src string, dst string) Packet {
 
 	return &UDP{
 		ip:      ip,
-		port:    port,
-		src:     src_conv,
-		dst:     dst_conv,
+		src:     src,
+		dst:     dst,
 		options: opts,
 	}
 
@@ -76,26 +71,15 @@ func (u *UDP) Send() {
 
 	buf := gopacket.NewSerializeBuffer()
 
-	var payload = func(dst []byte) []byte {
+	payload := []byte{uint8(0xff), uint8(0xff), uint8(0xff), uint8(0xff), uint8(0xff), uint8(0xff)}
 
-		var b []byte
-
-		for i := 0; i < 6; i++ {
-			b = append(b, uint8(0xff))
-		}
-
-		for i := 0; i < 16; i++ {
-			b = append(b, u.dst...)
-		}
-
-		return b
+	for i := 0; i < 16; i++ {
+		payload = append(payload, deviceStringToHex(u.dst)...)
 	}
 
-	pld := payload(u.dst)
+	gopacket.SerializeLayers(buf, u.options, &eth, gopacket.Payload(payload))
 
-	gopacket.SerializeLayers(buf, u.options, &eth, gopacket.Payload(pld))
-
-	conn, err := net.Dial("udp", fmt.Sprintf("%s:%s", u.ip, u.port))
+	conn, err := net.Dial("udp", fmt.Sprintf("%s:0", u.ip))
 	if err != nil {
 		panic(err)
 	}
@@ -125,7 +109,7 @@ func deviceStringToHex(s string) []byte {
 }
 
 func main() {
-	p := NewUDP("255.255.255.0", "0", "28:d0:ea:80:38:9c", "28:d0:ea:80:38:9c")
+	p := NewUDP("192.168.86.255", "28:d0:ea:80:38:9c", "28:d0:ea:80:38:9e")
 
 	p.Send()
 }

@@ -61,6 +61,8 @@ func main() {
 
 	conn.Write(buf.Bytes())
 
+	fmt.Println(buf.Bytes())
+
 }
 
 func generateWOLPayload(hardwareaddr string) []byte {
