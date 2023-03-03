@@ -109,7 +109,7 @@ func deviceStringToHex(s string) []byte {
 }
 
 func main() {
-	p := NewUDP("192.168.76.255", "28:d0:ea:80:38:9c", "18:C0:4D:36:EE:91")
+	p := NewUDP("192.168.76.255", "b4:2e:99:3c:39:c9", "18:C0:4D:36:EE:91")
 
 	p.Send()
 }
