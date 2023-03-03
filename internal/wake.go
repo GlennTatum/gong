@@ -23,7 +23,7 @@ type UDP struct {
 	options gopacket.SerializeOptions
 }
 
-func NewUDP(ip string, port string, src string, dst string) *UDP {
+func NewUDP(ip string, port string, src string, dst string) Packet {
 
 	var src_conv = deviceStringToHex(src)
 	var dst_conv = deviceStringToHex(dst)
@@ -55,7 +55,7 @@ When there is an interface is it suitable to call a types method within a functi
 
 func Send(p Packet) {
 
-	/* Check if connection is valid (interface availability etc.) */
+	/* Check network connectivity (interface availability etc.) */
 
 	p.Send(p)
 }
