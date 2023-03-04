@@ -1,6 +1,6 @@
 <p align="center">
   <b><i>gong</i></b>
-  <p align="center">Powerful WakeOnLan client written in go</p>
+  <p align="center">Powerful Wake On Lan client written in go</p>
 </p>
 
 # Description
