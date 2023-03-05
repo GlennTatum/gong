@@ -12,7 +12,8 @@ import (
 )
 
 type Packet interface {
-	Send()
+	Build() gopacket.SerializeBuffer
+	Write(buf gopacket.SerializeBuffer)
 }
 
 type UDP struct {
@@ -20,6 +21,10 @@ type UDP struct {
 	src     string
 	dst     string
 	options gopacket.SerializeOptions
+}
+
+type NetworkError struct {
+	err error
 }
 
 func NewUDP(ip string, src string, dst string) Packet {
@@ -38,29 +43,19 @@ func NewUDP(ip string, src string, dst string) Packet {
 
 }
 
-/*
+func (u *UDP) Write(buf gopacket.SerializeBuffer) {
 
-The struct UDP implements the Packet Interface
+	// Check Network Connectivity
 
-Should Interface Functions recieve values of its own type? (Send(p Packet))
+	conn, err := net.Dial("udp", fmt.Sprintf("%s:0", u.ip))
+	if err != nil {
+		panic(err)
+	}
 
-When there is an interface is it suitable to call a types method within a function that accepts an interface? (p.Send())
-
-*/
-
-func Write(p Packet) {
-	// "Generic" that checks net
+	conn.Write(buf.Bytes())
 }
 
-/*
-How is u able to be referenced if the only parameter was the interface Packet?
-
-Why can p not access the types attributes? (p.src)
-
-How is u able to be referenced if the only parameter to Send() is an interface?
-*/
-
-func (u *UDP) Send() {
+func (u *UDP) Build() gopacket.SerializeBuffer {
 
 	fmt.Println("Sending Packet ", u, reflect.TypeOf(u.src))
 
@@ -79,14 +74,7 @@ func (u *UDP) Send() {
 
 	gopacket.SerializeLayers(buf, u.options, &eth, gopacket.Payload(payload))
 
-	conn, err := net.Dial("udp", fmt.Sprintf("%s:0", u.ip))
-	if err != nil {
-		panic(err)
-	}
-
-	conn.Write(buf.Bytes())
-
-	fmt.Println("Packet Sent!", buf.Bytes())
+	return buf
 }
 
 func deviceStringToHex(s string) []byte {
@@ -108,8 +96,14 @@ func deviceStringToHex(s string) []byte {
 
 }
 
+// This should return some form of an implemented error interface
+
+func checkConn() string {
+	return "Network is not properly configured"
+}
+
 func main() {
 	p := NewUDP("192.168.76.255", "b4:2e:99:3c:39:c9", "18:C0:4D:36:EE:91")
 
-	p.Send()
+	p.Write(p.Build())
 }
