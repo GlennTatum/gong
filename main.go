@@ -4,13 +4,14 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 )
 
-func NewPacket(addr string, src net.HardwareAddr, dst net.HardwareAddr) gopacket.SerializeBuffer {
+func NewPacket(addr string, src net.HardwareAddr, dst net.HardwareAddr) (gopacket.SerializeBuffer, error) {
 	options := gopacket.SerializeOptions{
 		FixLengths:       true,
 		ComputeChecksums: true,
@@ -21,23 +22,31 @@ func NewPacket(addr string, src net.HardwareAddr, dst net.HardwareAddr) gopacket
 	}
 
 	buf := gopacket.NewSerializeBuffer()
+	payload, err := payload(dst)
+	if err != nil {
+		return nil, err
+	}
 
-	gopacket.SerializeLayers(buf, options, &eth, gopacket.Payload(payload(dst)))
+	gopacket.SerializeLayers(buf, options, &eth, gopacket.Payload(payload))
 
-	return buf
+	return buf, nil
 }
 
-func payload(dst net.HardwareAddr) []byte {
+func payload(dst net.HardwareAddr) ([]byte, error) {
 	var buf []byte
+	mac, err := DeviceStringToHex(dst.String())
+	if err != nil {
+		return nil, err
+	}
 
 	for i := 0; i < 6; i++ {
 		buf = append(buf, 255)
 	}
 	for i := 0; i < 16; i++ {
-		buf = append(buf, DeviceStringToHex(dst.String())...)
+		buf = append(buf, mac...)
 	}
 
-	return buf
+	return buf, nil
 }
 
 func dial(addr string) (net.Conn, error) {
@@ -55,13 +64,16 @@ func Wake(addr string, src net.HardwareAddr, dst net.HardwareAddr) error {
 		return err
 	}
 
-	p := NewPacket(addr, src, dst)
+	p, err := NewPacket(addr, src, dst)
+	if err != nil {
+		return err
+	}
 	conn.Write(p.Bytes())
 
 	return nil
 }
 
-func DeviceStringToHex(s string) []byte {
+func DeviceStringToHex(s string) ([]byte, error) {
 
 	var hw []byte
 
@@ -70,17 +82,25 @@ func DeviceStringToHex(s string) []byte {
 	for i := range normal {
 		h, err := hex.DecodeString(normal[i])
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		hw = append(hw, h[0])
 	}
 
-	return hw
+	return hw, nil
 }
 
 func main() {
 	// TODO Add flags
-	src := DeviceStringToHex("7e:33:a1:c8:ad:2a")
-	dst := DeviceStringToHex("16:03:10:7f:76:76")
+	src, err := DeviceStringToHex("7e:33:a1:c8:ad:2a")
+	if err != nil {
+		os.Exit(1)
+	}
+
+	dst, err := DeviceStringToHex("16:03:10:7f:76:76")
+	if err != nil {
+		os.Exit(1)
+	}
+
 	Wake("192.168.76.255", src, dst)
 }
